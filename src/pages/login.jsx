@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 const Login = () => {
 
     useEffect(() => {
-        document.title = "Intract | Login"
+        document.title = "Login"
     }, [])
 
 
