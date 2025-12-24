@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+.dark {
+    @apply bg-black text-white;
+}
+
+:root {
+    --bgcolor: black;
+}
+
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.social-bg {
+    background-image: url("/src/assets/bg/society.jpg");
+    background-size: cover;
+}
