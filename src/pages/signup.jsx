@@ -11,7 +11,7 @@ const SignUp = () => {
     const navigate = useNavigate();
 
     async function signup() {
-        const res = await fetch('http://localhost:3000/login', {
+        const res = await fetch('https://interact-server.vercel.app/signup', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
