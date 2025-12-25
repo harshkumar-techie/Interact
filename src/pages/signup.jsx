@@ -12,10 +12,9 @@ const SignUp = () => {
     const [password, setPassword] = useState("");
     const [step, setStep] = useState(0);
     const navigate = useNavigate();
-    const server_url = 'https://supreme-waffle-5gjx9v6vwjjqhqx-3000.app.github.dev';
 
     async function signup() {
-        const res = await fetch(`${server_url}/signup`, {
+        const res = await fetch(`${import.meta.env.VITE_server_url}/signup`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -36,7 +35,7 @@ const SignUp = () => {
     }
 
     async function fetch_username() {
-        const res = await fetch(`${server_url}/signup/username`, {
+        const res = await fetch(`${import.meta.env.VITE_server_url}/signup/username`, {
             method: "POST",
             headers: {
                 "Content-type": "application/json"
@@ -58,6 +57,7 @@ const SignUp = () => {
                 alert("Please enter your name")
             } else {
                 setStep(step + 1);
+                console.log(`${import.meta.env.server_url}`)
             }
         }
         if (step === 1) {

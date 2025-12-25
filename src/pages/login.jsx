@@ -2,21 +2,20 @@ import '../stylesheets/login.css'
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
-
     useEffect(() => {
         document.title = "Login"
     }, [])
 
+    const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [step, setStep] = useState(0);
 
-    const server_url = 'https://supreme-waffle-5gjx9v6vwjjqhqx-3000.app.github.dev';
-
     async function fetch_username() {
-        const res = await fetch(`${server_url}/login/username`, {
+        const res = await fetch(`${import.meta.env.VITE_server_url}/login/username`, {
             method: "POST",
             headers: {
                 "Content-type": "application/json"
@@ -26,12 +25,14 @@ const Login = () => {
         const data = await res.json();
         if (data.exist === true) {
             setStep(step + 1)
+        } else {
+            alert("username don't exist")
         }
 
     }
 
     async function login() {
-        const res = await fetch(`${server_url}`, {
+        const res = await fetch(`${import.meta.env.VITE_server_url}/login`, {
             method: "POST",
             headers: {
                 "Content-type": "application/json"
@@ -40,10 +41,11 @@ const Login = () => {
         });
         const data = await res.json();
         if (data.auth) {
-            localStorage.setItem("username", username)
-            localStorage.setItem("password", password)
+            localStorage.setItem("username", username);
+            localStorage.setItem("password", password);
+            navigate('/');
         } else {
-            alert("Invalid Password!")
+            alert("Invalid Password!");
         }
     }
 
