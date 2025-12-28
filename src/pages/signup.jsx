@@ -5,6 +5,9 @@ const SignUp = () => {
 
     useEffect(() => {
         document.title = "SignUp"
+        if (localStorage.getItem('username') !== null) {
+            navigate('/');
+        }
     }, [])
 
     const [uname, setUname] = useState("");
@@ -19,7 +22,7 @@ const SignUp = () => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ "name": uname, "username": username, "password": password })
+            body: JSON.stringify({ "name": uname, "username": username, "password": password, chats: [] })
         });
         if (res.status === 200) {
             alert("Username already exist")
@@ -57,7 +60,6 @@ const SignUp = () => {
                 alert("Please enter your name")
             } else {
                 setStep(step + 1);
-                console.log(`${import.meta.env.server_url}`)
             }
         }
         if (step === 1) {
@@ -81,15 +83,15 @@ const SignUp = () => {
                 <div className={"px-6 step-1 w-full flex flex-col"}>
                     <div className={(step === 0) ? '' : 'hidden'}>
                         <span className='text-2xl  '>Enter Name</span>
-                        <input onChange={(e) => { setUname(e.target.value) }} placeholder='Name' type="text" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
+                        <input onKeyDown={(e) => { e.key === "Enter" ? next() : '' }} onChange={(e) => { setUname(e.target.value) }} placeholder='Name' type="text" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
                     </div>
                     <div className={(step === 1) ? '' : 'hidden'}>
                         <span className='text-2xl  '>Create Username</span>
-                        <input onChange={(e) => { setUsername(e.target.value) }} placeholder='Username' type="text" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
+                        <input onKeyDown={(e) => { e.key === "Enter" ? next() : '' }} onChange={(e) => { setUsername(e.target.value) }} placeholder='Username' type="text" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
                     </div>
                     <div className={(step === 2) ? '' : 'hidden'}>
                         <span className='text-2xl  '>Create Password</span>
-                        <input onChange={(e) => { setPassword(e.target.value) }} placeholder='Password' type="password" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
+                        <input onKeyDown={(e) => { e.key === "Enter" ? next() : '' }} onChange={(e) => { setPassword(e.target.value) }} placeholder='Password' type="password" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
                     </div>
                     <div className='flex justify-center'>
                         <button id='signup' onClick={next} className=' w-36 border mt- h-10 rounded text-2xl font-bold cursor-pointer border-neutral-600 hover:bg-purple-600  hover: transition-all duration-300'>Next</button>

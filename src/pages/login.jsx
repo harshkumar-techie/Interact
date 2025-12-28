@@ -5,8 +5,12 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+
     useEffect(() => {
-        document.title = "Login"
+        document.title = "Login";
+        if (localStorage.getItem('username') !== null) {
+            navigate('/');
+        }
     }, [])
 
     const navigate = useNavigate();
@@ -70,11 +74,11 @@ const Login = () => {
                 <div className={"px-6 step-1 w-full flex flex-col"}>
                     <div className={(step === 0) ? '' : 'hidden'}>
                         <span className='text-2xl  '>Enter Username</span>
-                        <input onChange={(e) => { setUsername(e.target.value) }} placeholder='Username' type="text" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
+                        <input onKeyDown={(e) => { e.key === "Enter" ? next() : '' }} onChange={(e) => { setUsername(e.target.value) }} placeholder='Username' type="text" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
                     </div>
                     <div className={(step === 1) ? '' : 'hidden'}>
                         <span className='text-2xl  '>Enter Password</span>
-                        <input onChange={(e) => { setPassword(e.target.value) }} placeholder='Password' type="password" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
+                        <input onKeyDown={(e) => { e.key === "Enter" ? next() : '' }} onChange={(e) => { setPassword(e.target.value) }} placeholder='Password' type="password" className={`w-full bg-neutral-900 placeholder:text-white rounded-2xl h-14 focus:outline-none placeholder: border border-neutral-800 box-border px-6 my-4`} />
                     </div>
                     <div className='flex justify-center'>
                         <button id='signup' onClick={next} className=' w-36 border mt- h-10 rounded text-2xl font-bold cursor-pointer border-neutral-600 hover:bg-purple-600  hover: transition-all duration-300'>Next</button>
