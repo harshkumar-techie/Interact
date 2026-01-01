@@ -1,4 +1,3 @@
-import '../stylesheets/login.css'
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -8,15 +7,25 @@ const Login = () => {
 
     useEffect(() => {
         document.title = "Login";
-        if (localStorage.getItem('username') !== null) {
-            navigate('/');
-        }
+        login_status();
     }, [])
 
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [step, setStep] = useState(0);
+
+    async function login_status() {
+        const res = await fetch(`${import.meta.env.VITE_server_url}/login`, {
+            method: "GET",
+            credentials: "include"
+        });
+        const status = await res.json();
+        if (status.auth) {
+            navigate('/');
+        }
+    }
+
 
     async function fetch_username() {
         const res = await fetch(`${import.meta.env.VITE_server_url}/login/username`, {
@@ -36,17 +45,14 @@ const Login = () => {
     }
 
     async function login() {
-        const res = await fetch(`${import.meta.env.VITE_server_url}/login`, {
+        const res = await fetch(`${import.meta.env.VITE_server_url}/login/auth`, {
             method: "POST",
-            headers: {
-                "Content-type": "application/json"
-            },
+            headers: { "Content-type": "application/json" },
+            credentials: "include",
             body: JSON.stringify({ "username": username, "password": password })
         });
         const data = await res.json();
         if (data.auth) {
-            localStorage.setItem("username", username);
-            localStorage.setItem("password", password);
             navigate('/');
         } else {
             alert("Invalid Password!");

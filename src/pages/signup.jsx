@@ -30,7 +30,7 @@ const SignUp = () => {
         if (res.status === 201) {
             localStorage.setItem("username", username);
             localStorage.setItem("password", password);
-            navigate("/")
+            window.location.reload();
         }
         if (res.status === 400) {
             alert(res.json.message)

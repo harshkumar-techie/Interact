@@ -1,28 +1,28 @@
-import { useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const [dp_link, setDP_link] = useState("")
 
-  function log_out() {
-    localStorage.clear();
-    navigate('login')
-  }
 
   useEffect(() => {
     profile();
-  }, [])
+  }, []);
+
+  function log_out() {
+    window.location.reload();
+  }
 
   async function profile() {
-    const res = await fetch(`${import.meta.env.VITE_server_url}/home/profile_pic`, {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ username: localStorage.getItem("username"), password: localStorage.getItem("password") })
-    })
-    const data = await res.json();
-    setDP_link(data.dp_link);
+    if (localStorage.getItem("username")) {
+      const res = await fetch(`${import.meta.env.VITE_server_url}/home/profile_pic`, {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        body: JSON.stringify({ username: localStorage.getItem("username"), password: localStorage.getItem("password") })
+      })
+      const data = await res.json();
+      setDP_link(data.dp_link);
+    } else { return }
   }
 
   return (
@@ -33,9 +33,9 @@ const Navbar = () => {
         </div>
         <div>
           <ul className="flex gap-9">
-            <Link to={"/profile"}>
-              <img src={`${import.meta.env.VITE_server_url}/assets/dp/${dp_link}`} alt="DP" className="cursor-pointer h-12 w-12 object-fill rounded-full" />
-            </Link>
+            {/* <Link to={"/profile"}> */}
+            <img src={`${import.meta.env.VITE_server_url}/assets/dp/${dp_link}`} onClick={log_out} alt="DP" className="cursor-pointer h-12 w-12 object-fill rounded-full" />
+            {/* </Link> */}
           </ul>
         </div>
       </nav>

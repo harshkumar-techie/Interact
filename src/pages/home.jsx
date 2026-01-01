@@ -7,82 +7,86 @@ import back_arrow from '../image/icons/arrow_back.svg';
 
 
 const Home = () => {
-  const navigate = useNavigate(); //navigator
   const [search_user, setSearch_user] = useState(""); //search user input
   const [message, setMessage] = useState(""); //message input
-  const [chats_list, setChats_list] = useState([]); //chat users list
-  const [chat_info, setChat_info] = useState([]);
-  const [chat, setChat] = useState([]);
-  const my_user = localStorage.getItem("username")
+  const [chat_info, setChat_info] = useState(null);//chat header
+  const [chat_data, setChat_data] = useState(null);//full sync data
+  const [my_user, setMy_user] = useState("null");//full sync data
+  const navigate = useNavigate()
 
 
   useEffect(() => {
-    if (localStorage.getItem('username') === null) {
-      navigate('/login');
-    } else {
-      document.title = "Home";
-      fetch_chats();
-    }
+    document.title = "Home";
+    status()
+    sync_chats();
   }, []);
 
-  async function fetch_chats() {
-    const res = await fetch(`${import.meta.env.VITE_server_url}/home/chats_fetch`, {
+  useEffect(() => {
+    console.log(chat_data)
+  }, [chat_data]);
+
+
+  async function status() {
+    const req = await fetch(`${import.meta.env.VITE_server_url}/home/status`, {
       method: "POST",
       headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ username: localStorage.getItem("username"), password: localStorage.getItem("password") })
+      credentials: "include"
     })
-    const chats = await res.json();
-    setChats_list(chats);
+    const res = await req.json();
+    if (!res.auth) {
+      navigate('/login')
+    } else {
+      setMy_user(res.username);
+    }
+  }
+
+  async function sync_chats() {
+    const req = await fetch(`${import.meta.env.VITE_server_url}/home/sync_chats`, {
+      method: "POST",
+      headers: { "Content-type": "application/json" },
+      credentials: "include"
+    })
+    const res = await req.json();
+    setChat_data(res);
+    setTimeout(() => {
+      sync_chats()
+    }, 1000);
   }
 
   async function add_chat() {
-    const res = await fetch(`${import.meta.env.VITE_server_url}/home/addUser`, {
+    const res = await fetch(`${import.meta.env.VITE_server_url}/home/add_user`, {
       method: "POST",
       headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ username: localStorage.getItem("username"), password: localStorage.getItem("password"), searchUser: search_user })
+      credentials: "include",
+      body: JSON.stringify({ searchUser: search_user })
     })
     const data = await res.json();
     if (data.status === true) {
-      fetch_chats();
-      setSearch_user("")
+      sync_chats();
+      setSearch_user("");
     } else {
       alert(data.message)
       setSearch_user("")
     }
   }
-
   async function send_msg() {
     const res = await fetch(`${import.meta.env.VITE_server_url}/home/msg`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ username: localStorage.getItem("username"), password: localStorage.getItem("password"), msg: { msg_to: chat_info.username, msg: message } })
+      body: JSON.stringify({ msg_to: chat_info.username, msg: message })
     })
     const data = await res.json();
     if (data.sent === true) {
       setMessage("");
-      refresh_chat(chat_info);
     } else {
       alert("msg not sent");
     }
   }
 
-  async function refresh_chat(user) {
-    const res = await fetch(`${import.meta.env.VITE_server_url}/home/chat_refresher`, {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ username: localStorage.getItem("username"), password: localStorage.getItem("password"), msgto: user.username })
-    })
-    const data = await res.json();
-    if (data.status === true) {
-      setChat(data.chat_data);
-    } else {
-      setChat([]);
-    }
-  }
-
   return (
     <div className='pt-16 bg-black h-svh text-white flex'>
-      <div className={`bg-black border-r-2 ${chat_info.length === 0 ? "block" : "hidden"} md:block border-neutral-700 w-full md:w-[22vw]`}> {/* chats user list */}
+      <div className={`bg-black border-r-2 ${!chat_info ? "block" : "hidden"} md:block border-neutral-700 w-full md:w-[22vw]`}> {/* chats user list */}
         <div className="h-16 flex items-center box-border px-2 border-b border-neutral-700">
           <div className=" h-10 rounded-3xl w-full bg-neutral-900 border border-neutral-800 px-3 flex items-center justify-between">
             <input onKeyDown={(key) => { key.key === "Enter" ? search_user === "" ? '' : add_chat() : '' }} onChange={(e) => { setSearch_user(e.target.value) }} value={search_user} type="text" className="w-[86%] my-2 focus:outline-none" placeholder="Search..." />
@@ -91,10 +95,11 @@ const Home = () => {
           <button><img src={more} alt="more" className="h-10 cursor-pointer" /></button>
         </div>
 
-        {chats_list.map(user => {
+        {chat_data?.chats_list.map(user => {
           return (
-            <div key={user.username} onClick={() => { setChat_info(user), refresh_chat(user) }} className="h-16  cursor-pointer mx-2 rounded-2xl px-3 transition-all duration-150 my-2  hover:bg-neutral-900 flex items-center">
-              <img src={`${import.meta.env.VITE_server_url}/assets/dp/${user.dp}`} alt="dp" className="h-12 w-12 mr-4 object-fill rounded-full" />
+            <div key={user.username} onClick={() => setChat_info(user)} className="h-16  cursor-pointer mx-2 rounded-2xl px-3 transition-all duration-150 my-2  hover:bg-neutral-900 flex items-center">
+              <img src={`${import.meta.env.VITE_server_url}/assets/dp/${user.dp}`} alt="dp" className={`h-12 w-12 mr-4 object-fill ${user.dp ? '' : "hidden"} rounded-full`} />
+              <div className={`h-12 w-12 mr-4 bg-neutral-900 text-2xl font-bold flex justify-center border border-neutral-700 items-center ${!user.dp ? '' : "hidden"} rounded-full`}>{user.name[0]}</div>
               <div className="flex flex-col">
                 <div className="font-bold">{user.name}</div>
                 <div className="font-light">{user.username}</div>
@@ -105,23 +110,24 @@ const Home = () => {
       </div>
 
 
-      <div className={`bg-black hidden md:${chat_info.length === 0 ? "flex" : "hidden"} md:w-[78vw] h-[svh-16] flex-col justify-center items-center`}>
+      <div className={`bg-black text-white hidden md:${!chat_info ? "block" : "hidden"} md:w-[78vw] h-[svh-16] flex-col justify-center items-center`}>
         <div className="text-4xl my-5">Welcome! to Interact</div>
         <div className="text-3xl">Please click on a chat to Interact</div>
       </div>
 
-      <div className={`bg-black ${chat_info.length === 0 ? "hidden" : "block"} w-full md:w-[78vw] h-[svh-16] flex`} >
+      <div className={`bg-black ${!chat_info ? "hidden" : "block"} w-full md:w-[78vw] h-[svh-16] flex`} >
         <div className="h-16 fixed top-16 right-0 w-svw md:w-[78vw] box-border border-b px-4 border-neutral-700 flex items-center">
-          <img src={back_arrow} alt="back_arrow" className={`md:hidden`} onClick={() => setChat_info([])} />
-          <img src={`${import.meta.env.VITE_server_url}/assets/dp/${chat_info.dp}`} alt="dp" className="h-12 w-12 object-fill mr-4 rounded-full" />
-          <div className="text-2xl  font-bold">{chat_info.name}</div>
+          <img src={back_arrow} alt="back_arrow" className={`md:hidden`} onClick={() => setChat_info(null)} />
+          <img src={`${import.meta.env.VITE_server_url}/assets/dp/${chat_info?.dp}`} alt="dp" className={`h-12 w-12 mr-4 object-fill ${chat_info?.dp ? '' : "hidden"} rounded-full`} />
+          <div className={`h-12 w-12 mr-4 bg-neutral-900 text-2xl font-bold flex justify-center border border-neutral-700 items-center ${!chat_info?.dp ? '' : "hidden"} rounded-full`}>{chat_info?.name?.[0]}</div>
+          <div className="text-2xl  font-bold">{chat_info?.name}</div>
         </div>
         <div className="my-16 w-full flex flex-col-reverse overflow-y-scroll transition-all duration-300 scroll-hidden px-4">
           <div>
-            {chat.map(c => {
+            {(chat_info ? chat_data?.chats_data.find(obj => chat_info.username in obj)?.[chat_info?.username] || [] : []).map(c => {
               return (
                 <div key={c.id} className={`flex ${(my_user === c.by) ? 'flex-row-reverse' : ''}`}>
-                  <div className={`border border-neutral-800 bg-neutral-900 h-10 my-1.5 content-center rounded-3xl px-5`}>
+                  <div className={`border border-neutral-800 max-w-[80%] overflow-hidden bg-neutral-900 min-h-10 my-1.5 content-center rounded-3xl px-5`}>
                     {c.msg}
                   </div>
                 </div>
