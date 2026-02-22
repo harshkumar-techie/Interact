@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import search from '../image/icons/search.svg';
 import send from '../image/icons/send.svg';
@@ -11,76 +11,106 @@ const Home = () => {
   const [message, setMessage] = useState(""); //message input
   const [chat_info, setChat_info] = useState(null);//chat header
   const [chat_data, setChat_data] = useState(null);//full sync data
-  const [my_user, setMy_user] = useState("null");//full sync data
+  const [my_user, setMy_user] = useState("null");//current user
   const navigate = useNavigate()
+  const syncTimerRef = useRef(null);
+  const isMountedRef = useRef(true);
 
 
   useEffect(() => {
     document.title = "Home";
+    isMountedRef.current = true;
     status()
     sync_chats();
-  }, []);
 
-  useEffect(() => {
-    console.log(chat_data)
-  }, [chat_data]);
+    return () => {
+      // Cleanup: stop polling when component unmounts
+      isMountedRef.current = false;
+      if (syncTimerRef.current) {
+        clearTimeout(syncTimerRef.current);
+        syncTimerRef.current = null;
+      }
+    };
+  }, []);
 
 
   async function status() {
-    const req = await fetch(`${import.meta.env.VITE_server_url}/home/status`, {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      credentials: "include"
-    })
-    const res = await req.json();
-    if (!res.auth) {
-      navigate('/login')
-    } else {
-      setMy_user(res.username);
+    try {
+      const req = await fetch(`${import.meta.env.VITE_server_url}/home/status`, {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        credentials: "include"
+      })
+      const res = await req.json();
+      if (!res.auth) {
+        navigate('/login')
+      } else {
+        setMy_user(res.username);
+      }
+    } catch (err) {
+      console.error("Status check failed:", err);
+      navigate('/login');
     }
   }
 
   async function sync_chats() {
-    const req = await fetch(`${import.meta.env.VITE_server_url}/home/sync_chats`, {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      credentials: "include"
-    })
-    const res = await req.json();
-    setChat_data(res);
-    setTimeout(() => {
-      sync_chats()
-    }, 1000);
+    try {
+      const req = await fetch(`${import.meta.env.VITE_server_url}/home/sync_chats`, {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        credentials: "include"
+      })
+      const res = await req.json();
+      if (isMountedRef.current) {
+        setChat_data(res);
+      }
+    } catch (err) {
+      console.error("Sync chats failed:", err);
+    }
+    // Only schedule next poll if still mounted
+    if (isMountedRef.current) {
+      syncTimerRef.current = setTimeout(() => {
+        sync_chats()
+      }, 1000);
+    }
   }
 
   async function add_chat() {
-    const res = await fetch(`${import.meta.env.VITE_server_url}/home/add_user`, {
-      method: "POST",
-      headers: { "Content-type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ searchUser: search_user })
-    })
-    const data = await res.json();
-    if (data.status === true) {
-      sync_chats();
-      setSearch_user("");
-    } else {
-      alert(data.message)
-      setSearch_user("")
+    try {
+      const res = await fetch(`${import.meta.env.VITE_server_url}/home/add_user`, {
+        method: "POST",
+        headers: { "Content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ searchUser: search_user })
+      })
+      const data = await res.json();
+      if (data.status === true) {
+        setSearch_user("");
+      } else {
+        alert(data.message)
+        setSearch_user("")
+      }
+    } catch (err) {
+      alert("Failed to add user. Please try again.");
     }
   }
+
   async function send_msg() {
-    const res = await fetch(`${import.meta.env.VITE_server_url}/home/msg`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-type": "application/json" },
-      body: JSON.stringify({ msg_to: chat_info.username, msg: message })
-    })
-    const data = await res.json();
-    if (data.sent === true) {
-      setMessage("");
-    } else {
-      alert("msg not sent");
+    try {
+      const res = await fetch(`${import.meta.env.VITE_server_url}/home/msg`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-type": "application/json" },
+        body: JSON.stringify({ msg_to: chat_info.username, msg: message })
+      })
+      const data = await res.json();
+      if (data.sent === true) {
+        setMessage("");
+      } else {
+        alert("msg not sent");
+      }
+    } catch (err) {
+      alert("Failed to send message. Please try again.");
     }
   }
 
@@ -95,7 +125,7 @@ const Home = () => {
           <button><img src={more} alt="more" className="h-10 cursor-pointer" /></button>
         </div>
 
-        {chat_data?.chats_list.map(user => {
+        {chat_data?.chats_list?.map(user => {
           return (
             <div key={user.username} onClick={() => setChat_info(user)} className="h-16  cursor-pointer mx-2 rounded-2xl px-3 transition-all duration-150 my-2  hover:bg-neutral-900 flex items-center">
               <img src={`${import.meta.env.VITE_server_url}/assets/dp/${user.dp}`} alt="dp" className={`h-12 w-12 mr-4 object-fill ${user.dp ? '' : "hidden"} rounded-full`} />
@@ -124,7 +154,7 @@ const Home = () => {
         </div>
         <div className="my-16 w-full flex flex-col-reverse overflow-y-scroll transition-all duration-300 scroll-hidden px-4">
           <div>
-            {(chat_info ? chat_data?.chats_data.find(obj => chat_info.username in obj)?.[chat_info?.username] || [] : []).map(c => {
+            {(chat_info ? chat_data?.chats_data?.find(obj => chat_info.username in obj)?.[chat_info?.username] || [] : []).map(c => {
               return (
                 <div key={c.id} className={`flex ${(my_user === c.by) ? 'flex-row-reverse' : ''}`}>
                   <div className={`border border-neutral-800 max-w-[80%] overflow-hidden bg-neutral-900 min-h-10 my-1.5 content-center rounded-3xl px-5`}>

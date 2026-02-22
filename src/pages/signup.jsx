@@ -3,54 +3,58 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
 
-    useEffect(() => {
-        document.title = "SignUp"
-        if (localStorage.getItem('username') !== null) {
-            navigate('/');
-        }
-    }, [])
-
+    const navigate = useNavigate();
     const [uname, setUname] = useState("");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [step, setStep] = useState(0);
-    const navigate = useNavigate();
+
+    useEffect(() => {
+        document.title = "SignUp"
+    }, [])
 
     async function signup() {
-        const res = await fetch(`${import.meta.env.VITE_server_url}/signup`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ "name": uname, "username": username, "password": password, chats: [] })
-        });
-        if (res.status === 200) {
-            alert("Username already exist")
-        }
-        if (res.status === 201) {
-            localStorage.setItem("username", username);
-            localStorage.setItem("password", password);
-            window.location.reload();
-        }
-        if (res.status === 400) {
-            alert(res.json.message)
+        try {
+            const res = await fetch(`${import.meta.env.VITE_server_url}/signup`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ "name": uname, "username": username, "password": password, chats: [] })
+            });
+            const data = await res.json();
+            if (res.status === 200) {
+                alert(data.message || "Username already exists")
+            }
+            if (res.status === 201) {
+                alert("Account created! Please login.");
+                navigate('/login');
+            }
+            if (res.status >= 400) {
+                alert(data.message || "Something went wrong");
+            }
+        } catch (err) {
+            alert("Network error. Please try again.");
         }
     }
 
     async function fetch_username() {
-        const res = await fetch(`${import.meta.env.VITE_server_url}/signup/username`, {
-            method: "POST",
-            headers: {
-                "Content-type": "application/json"
-            },
-            body: JSON.stringify({ "username": username })
-        });
-        if (res.status === 200) {
-            alert("username already taken");
-        } else {
-            setStep(step + 1)
+        try {
+            const res = await fetch(`${import.meta.env.VITE_server_url}/signup/username`, {
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json"
+                },
+                body: JSON.stringify({ "username": username })
+            });
+            if (res.status === 200) {
+                alert("username already taken");
+            } else {
+                setStep(step + 1)
+            }
+        } catch (err) {
+            alert("Network error. Please try again.");
         }
-
     }
 
 
@@ -63,11 +67,15 @@ const SignUp = () => {
             }
         }
         if (step === 1) {
-            fetch_username();
+            if (username === "") {
+                alert("Please enter a username")
+            } else {
+                fetch_username();
+            }
         }
         if (step === 2) {
             if (password.length < 8) {
-                alert("try hard password")
+                alert("Password must be at least 8 characters")
             } else {
                 signup();
             }
